@@ -1,0 +1,101 @@
+/* --- Base Reset & Page Setup --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  display: flex;
+  align-items: center; /* Centers the whole container vertically on tall screens */
+}
+
+/* ========================================================
+   1. FLEX CONTAINER (The Row Layout)
+   ======================================================== */
+.cards-container {
+  /* Step 1: Make items display as flex items */
+  display: flex;
+
+  /* Step 2: Enable wrapping onto new lines on narrow screens */
+  flex-wrap: wrap;
+
+  /* Step 3: Set consistent spacing between cards (both rows & columns) */
+  gap: 24px;
+
+  /* Keep container centered and constrained on large screens */
+  max-width: 1080px;
+  margin: 40px auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+/* ========================================================
+   2. FLEX ITEMS (The 3 Equal Cards)
+   ======================================================== */
+.card {
+  /*
+    flex: [flex-grow] [flex-shrink] [flex-basis]
+    - grow: 1 (cards stretch equally to fill available space)
+    - shrink: 1 (cards can shrink if needed)
+    - basis: 280px (ideal starting width before wrapping occurs)
+  */
+  flex: 1 1 280px;
+
+  /* Card aesthetic & internal layout */
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column; /* Stack content inside card from top to bottom */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Internal Card Elements --- */
+.card-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.card p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #64748b;
+  margin-bottom: 24px;
+  /* Pushes the button to the bottom if cards have different text lengths */
+  flex-grow: 1;
+}
+
+.card-btn {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.card-btn:hover {
+  background-color: #2563eb;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navbar with Logo & Links</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ==============================================
+       MAIN NAVBAR CONTAINER (Parent Flex Container)
+       This will use flexbox to push the logo to the left 
+       and navigation links to the right.
+       ============================================== -->
+  <header>
+    <nav class="navbar">
+      
+      <!-- ITEM 1 (Left Side): Logo -->
+      <a href="#" class="logo">Brand<span>Logo</span></a>
+
+      <!-- ITEM 2 (Right Side): Navigation Links -->
+      <!-- This <ul> will also become a flex container to put links in a row -->
+      <ul class="nav-links">
+        <li><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+
+    </nav>
+  </header>
+
+</body>
+</html>

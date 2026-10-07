@@ -9,7 +9,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Browser tab title -->
-    <title>Allyan Younis</title>
+    <title>My Resume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -21,9 +25,10 @@
         </p>
 
         <nav aria-label="Contact links">
-            <ul>
+            <ul class="contact-links">
                 <li>
-                    <a href="mailto:your.email@example.com">
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=allyanyounis@gmail.com&su=Resume+Contact"
+                        target="_blank" rel="noopener noreferrer">
                         Email
                     </a>
                 </li>
@@ -35,7 +40,7 @@
                 </li>
 
                 <li>
-                    <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer">
+                    <a href="https://www.linkedin.com/feed/" target="_blank" rel="noopener noreferrer">
                         LinkedIn
                     </a>
                 </li>
@@ -62,20 +67,21 @@
 
 
         <!-- Technical and professional skills -->
-        <section aria-labelledby="skills-heading">
+        <section>
+            <h2>Skills</h2>
 
-            <h2 id="skills-heading">
-                Skills
-            </h2>
-
-            <ul>
+            <ul class="skills-list">
                 <li>HTML5 Semantic Structure</li>
                 <li>JavaScript Fundamentals</li>
                 <li>React Development</li>
                 <li>Git and GitHub Workflow</li>
                 <li>Problem Solving</li>
+                <li>JavaScript Fundamentals</li>
+                <li>React Development</li>
+                <li>Git and GitHub Workflow</li>
+                <li>Problem Solving</li>
+                <li>Problem Solving</li>
             </ul>
-
         </section>
 
         <!-- Education background section -->
@@ -145,7 +151,7 @@
             Replace this image path with your actual project image later.
             alt describes the image for accessibility.
         -->
-                <img src="images/portfolio.png" alt="Screenshot of portfolio website project" width="300">
+                <!--<img src="images/portfolio.png" alt="Screenshot of portfolio website project" width="300">-->
 
 
                 <p>
@@ -154,7 +160,7 @@
                 </p>
 
 
-                <a href="https://github.com/yourusername/portfolio" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/allyanyounis" target="_blank" rel="noopener noreferrer">
                     View Project
                 </a>
 
@@ -169,7 +175,7 @@
                 </h3>
 
 
-                <img src="images/task-app.png" alt="Screenshot of task management application" width="300">
+                <!--<img src="images/task-app.png" alt="Screenshot of task management application" width="300">-->
 
 
                 <p>
@@ -178,7 +184,8 @@
                 </p>
 
 
-                <a href="https://github.com/yourusername/task-app" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/AllyanSystumm/Clinic-Assistant-AI-Voice-Agent" target="_blank"
+                    rel="noopener noreferrer">
                     View Project
                 </a>
 
@@ -195,20 +202,16 @@
 
             <form action="#" method="post">
 
-                <!-- Name input -->
                 <label for="name">
-                    Full Name:
+                    Full Name <span class="required">*</span>:
                 </label>
-
                 <input type="text" id="name" name="name" required>
 
-
-                <!-- Email input -->
                 <label for="email">
-                    Email Address:
+                    Email Address <span class="required">*</span>:
                 </label>
-
                 <input type="email" id="email" name="email" required>
+
 
 
                 <!-- Message input -->
