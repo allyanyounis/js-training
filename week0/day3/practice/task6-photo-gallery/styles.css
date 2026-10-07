@@ -1,0 +1,93 @@
+/* --- Base Page Setup --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #0f172a; /* Sleek dark theme makes photos pop */
+  color: #f8fafc;
+  padding: 40px 20px;
+}
+
+/* --- Header Section --- */
+.gallery-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.gallery-header h1 {
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.gallery-header p {
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.gallery-header code {
+  background-color: #1e293b;
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ========================================================
+   THE CORE CSS GRID (The Main Requirement)
+   ======================================================== */
+.gallery-grid {
+  /* 1. Turn the container into a CSS Grid */
+  display: grid;
+
+  /* 
+    2. THE AUTO-RESPONSIVE FORMULA:
+    - repeat(): Automatically repeats the column pattern.
+    - auto-fill: Fits as many columns as possible into each row.
+    - minmax(200px, 1fr): Each column is at least 200px wide, 
+      and stretches up to 1fr to fill leftover space evenly.
+  */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+
+  /* 3. Spacing between grid cells */
+  gap: 20px;
+
+  /* Keep the gallery centered with maximum reading width */
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ========================================================
+   GALLERY CARD & IMAGE FORMATTING
+   ======================================================== */
+.gallery-card {
+  background-color: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gallery-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Consistent photo aspect ratio */
+.gallery-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover; /* Prevents images from stretching or distorting */
+  display: block;
+}
+
+.gallery-card figcaption {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}

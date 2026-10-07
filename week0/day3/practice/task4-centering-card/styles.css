@@ -1,0 +1,71 @@
+/* --- Base Page Reset --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+/* =========================================================
+   METHOD 1: FLEXBOX CENTERING
+   ========================================================= */
+.container {
+  /* 1. Give the container full viewport height so vertical space exists */
+  min-height: 100vh;
+  padding: 20px;
+
+  /* 2. Activate Flexbox */
+  display: flex;
+
+  /* 3. Horizontal centering (along the main axis: left-to-right) */
+  justify-content: center;
+
+  /* 4. Vertical centering (along the cross axis: top-to-bottom) */
+  align-items: center;
+}
+
+/* --- Card Appearance & Internal Layout --- */
+.card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.card p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.card button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.card button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
