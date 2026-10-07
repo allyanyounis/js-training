@@ -1,0 +1,325 @@
+/* Reset default browser spacing */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Basic page styling */
+body {
+    font-family: Arial, sans-serif;
+}
+
+
+/* 
+   HEADER + NAVIGATION
+ */
+
+/* Header: logo on left and navigation on right using Flexbox */
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background-color: #222;
+    color: white;
+    padding: 20px 60px;
+
+    /* Keeps header visible while scrolling */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Logo styling */
+.logo h1 {
+    font-size: 28px;
+}
+
+/* Navigation links displayed in one row */
+.nav-links {
+    display: flex;
+    gap: 30px;
+    list-style: none;
+}
+
+/* Navigation link styling */
+.nav-links a {
+    color: white;
+    text-decoration: none;
+}
+
+
+/*
+   HERO SECTION
+ */
+
+/* Hero: places text and image side by side using Flexbox */
+/* Hero section */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 50px 60px;
+  min-height: 450px;
+}
+
+/* Left side */
+.hero-content {
+  width: 45%;
+}
+
+/* Right side */
+.hero-image {
+  width: 45%;
+}
+
+/* Hero image */
+.hero-image img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Call-to-action button */
+.cta-button {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+/* Right side of hero */
+.hero-image {
+    width: 45%;
+}
+
+/* Hero image styling */
+.hero-image img {
+    width: 100%;
+    display: block;
+}
+
+
+/* 
+   FEATURES SECTION
+ */
+
+/* Features section */
+.features {
+    padding: 60px;
+    background-color: #f9fafb;
+}
+
+/* Reusable section heading */
+.section-heading {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-heading h2 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+/* Creates 3 equal feature cards using CSS Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+/* Individual feature card */
+.feature-card {
+    background-color: white;
+    padding: 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+/* Feature icon */
+.feature-icon {
+    display: inline-block;
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+/* Feature card heading */
+.feature-card h3 {
+    margin-bottom: 10px;
+}
+
+
+/*
+   PRICING SECTION
+ */
+
+/* Pricing section */
+.pricing {
+    padding: 60px;
+}
+
+/* Creates 3 pricing cards side by side */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+/* Individual pricing card */
+.pricing-card {
+    padding: 30px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Highlights the middle pricing plan */
+.featured-plan {
+    border: 2px solid #2563eb;
+    transform: scale(1.05);
+}
+
+/* Price styling */
+.price {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+
+/* 
+   TESTIMONIALS SECTION
+*/
+
+/* Testimonials section */
+.testimonials {
+    padding: 60px;
+    background-color: #f9fafb;
+}
+
+/* Testimonial cards using Grid */
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* Individual testimonial card */
+.testimonial-card {
+    background-color: white;
+    padding: 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+
+/*
+   FAQ SECTION
+ */
+
+/* FAQ section */
+.faq {
+    padding: 60px;
+}
+
+/* Individual FAQ item */
+.faq details {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+/* FAQ question */
+.faq summary {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+/* 
+   FOOTER
+ */
+
+/* Footer section */
+.site-footer {
+    background-color: #111827;
+    color: white;
+    padding: 50px 60px 20px;
+}
+
+/* Footer columns using CSS Grid */
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+}
+
+/* Footer column heading */
+.footer-column h3 {
+    margin-bottom: 15px;
+}
+
+/* Remove default list styling */
+.footer-column ul {
+    list-style: none;
+}
+
+/* Space between footer links */
+.footer-column li {
+    margin-bottom: 10px;
+}
+
+/* Footer links */
+.footer-column a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Footer bottom text */
+.footer-bottom {
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* 
+   FINAL DESKTOP POLISH
+*/
+
+/* Smooth scrolling for navigation links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better spacing for section text */
+section p {
+    color: #4b5563;
+}
+
+/* Simple hover effect for navigation links */
+.nav-links a:hover {
+    color: #93c5fd;
+}
+
+/* Hover effect for CTA button */
+.cta-button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Small hover effect for cards */
+.feature-card:hover,
+.pricing-card:hover,
+.testimonial-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Prevent hero image from becoming too large */
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+}
