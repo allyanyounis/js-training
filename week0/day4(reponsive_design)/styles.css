@@ -11,6 +11,7 @@
     --card-color: #ffffff;
     --paragraph-color: #4b5563;
     --section-bg: #f9fafb;
+    --faq-bg: #f3f4f6;
 }
 @media (prefers-color-scheme: dark) {
     :root {
@@ -19,6 +20,7 @@
         --card-color: #1f2937;
         --paragraph-color: #d1d5db;
         --section-bg: #1f2937;
+        --faq-bg: #253650;
     }
 }
 
@@ -255,6 +257,7 @@ body {
 /* FAQ section */
 .faq {
     padding: 20px;
+    background-color: var(--faq-bg);
 }
 
 /* Individual FAQ item */
@@ -440,6 +443,20 @@ section p {
 }
 
 
+@media (max-width: 767px) {
+    #features,
+    #pricing,
+    #faq {
+        scroll-margin-top: 160px;
+    }
+}
+
+
+#features,
+#pricing,
+#faq {
+    scroll-margin-top: 110px;
+}
 
 
 
