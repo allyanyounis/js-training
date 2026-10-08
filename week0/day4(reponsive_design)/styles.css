@@ -1,0 +1,720 @@
+/* Reset default browser spacing */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    margin: 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #111827;
+    --card-color: #ffffff;
+    --paragraph-color: #4b5563;
+    --section-bg: #f9fafb;
+    --faq-bg: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #111827;
+        --text-color: #f9fafb;
+        --card-color: #1f2937;
+        --paragraph-color: #d1d5db;
+        --section-bg: #1f2937;
+        --faq-bg: #253650;
+    }
+}
+
+/* Basic page styling */
+body {
+
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+
+/* 
+   HEADER + NAVIGATION
+ */
+
+/* Header: logo on left and navigation on right using Flexbox */
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background-color: #142D4E;
+    color: white;
+    padding: 15px 5px;
+
+
+    /* Keeps header visible while scrolling */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Logo styling */
+.logo h1 {
+    font-size: 28px;
+}
+
+/* Navigation links displayed in one row */
+.nav-links {
+    display: flex;
+    gap: 30px;
+    list-style: none;
+}
+
+/* Navigation link styling */
+.nav-links a {
+    color: white;
+    text-decoration: none;
+}
+
+.desktop-menu {
+    display: none;
+}
+
+/* HERO SECTION - Mobile First */
+
+.hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 20px;
+    min-height: 450px;
+    gap: 25px;
+    width: 100%;
+    max-height: 100%;
+}
+
+/* Left side: Hero content */
+.hero-content {
+    width: 100%;
+
+}
+
+.hero-content h2 {
+    font-size: clamp(28px, 3vw, 40px);
+}
+
+/* Right side: Hero image */
+.hero-image {
+    width: 100%;
+
+}
+
+.image-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--paragraph-color);
+    margin-top: 12px;
+    font-style: italic;
+}
+
+/* Responsive hero image */
+.hero-image img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+    display: block;
+}
+
+
+/* Call-to-action button */
+.cta-button {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    margin-top: 15px;
+    transition: background-color 0.3s ease
+}
+
+
+
+
+
+/* 
+   FEATURES SECTION
+ */
+
+/* Features section */
+.features {
+    padding: 20px;
+    background-color: var(--section-bg);
+
+
+}
+
+/* Reusable section heading */
+.section-heading {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-heading h2 {
+    font-size: clamp(24px, 4vw, 36px);
+    margin-bottom: 10px;
+}
+
+/* Creates 3 equal feature cards using CSS Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Individual feature card */
+.feature-card {
+    padding: 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: var(--card-color);
+    color: var(--text-color);
+    transition: transform 0.3s ease;
+}
+
+/* Feature icon */
+.feature-icon {
+    display: inline-block;
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+/* Feature card heading */
+.feature-card h3 {
+    margin-bottom: 10px;
+}
+
+
+/*
+   PRICING SECTION
+ */
+
+/* Pricing section */
+.pricing {
+    padding: 60px;
+}
+
+/* Creates 3 pricing cards side by side */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Individual pricing card */
+.pricing-card {
+    padding: 30px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    text-align: center;
+    background-color: var(--card-color);
+    color: var(--text-color);
+    transition: transform 0.3s ease;
+}
+
+/* Highlights the middle pricing plan */
+.featured-plan {
+    border: 2px solid #2563eb;
+
+}
+
+/* Price styling */
+.price {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+
+/* 
+   TESTIMONIALS SECTION
+*/
+
+/* Testimonials section */
+.testimonials {
+    padding: 60px;
+    background-color: var(--section-bg);
+}
+
+/* Testimonial cards using Grid */
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Individual testimonial card */
+.testimonial-card {
+    background-color: var(--card-color);
+    color: var(--text-color);
+    padding: 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+
+/*
+   FAQ SECTION
+ */
+
+/* FAQ section */
+.faq {
+    padding: 20px;
+    background-color: var(--faq-bg);
+}
+
+/* Individual FAQ item */
+.faq details {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+/* FAQ question */
+.faq summary {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+/* 
+   FOOTER
+ */
+
+/* Footer section */
+.site-footer {
+    background-color: #111827;
+    color: white;
+    padding: 30px 20px;
+}
+
+/* Footer columns using CSS Grid */
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+}
+
+/* Footer column heading */
+.footer-column h3 {
+    margin-bottom: 15px;
+}
+
+/* Remove default list styling */
+.footer-column ul {
+    list-style: none;
+}
+
+/* Space between footer links */
+.footer-column li {
+    margin-bottom: 10px;
+}
+
+/* Footer links */
+.footer-column a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Footer bottom text */
+.footer-bottom {
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* 
+   FINAL DESKTOP POLISH
+*/
+
+/* Smooth scrolling for navigation links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better spacing for section text */
+section p {
+    color: var(--paragraph-color);
+}
+
+/* Simple hover effect for navigation links */
+.nav-links a:hover {
+    color: #93c5fd;
+}
+
+/* Hover effect for CTA button */
+.cta-button:hover,
+.cta-button:active {
+    background-color: #1d4ed8;
+}
+
+/* Small hover effect for cards */
+.feature-card:hover,
+.feature-card:active,
+.pricing-card:hover,
+.pricing-card:active,
+.testimonial-card:hover,
+.testimonial-card:active {
+    transform: translateY(-4px);
+}
+
+/* Prevent hero image from becoming too large */
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+
+/* TABLET - 768px */
+
+/* TABLET - 768px */
+@media (min-width: 768px) {
+
+    /* Hero Section */
+.hero {
+    min-height: 550px;
+    padding: 60px 35px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+
+.hero-content,
+.hero-image {
+    align-self: center;
+}
+
+    /* Responsive Image */
+    .hero-image img {
+        width: 100%;
+        height: 350px;
+        max-height: 350px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+
+    /* Image Caption */
+    .image-caption {
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    /* Features - 2 Columns */
+    .features-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Pricing - 2 Columns */
+    .pricing-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Testimonials - 2 Columns */
+    .testimonial-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Footer - 3 Columns */
+    .footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .footer-column p {
+        margin-top: 10px;
+        line-height: 1.6;
+    }
+
+    /* Hide Mobile Navigation */
+    .mobile-menu {
+        display: none;
+    }
+
+    /* Show Tablet Navigation */
+    .desktop-menu {
+        display: flex;
+        gap: 30px;
+        list-style: none;
+    }
+
+    .desktop-menu a {
+        color: white;
+        text-decoration: none;
+    }
+}
+
+
+/* DESKTOP - 1024px */
+@media (min-width: 1024px) {
+
+    .features-grid,
+    .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .site-header {
+        padding: 20px 60px;
+    }
+
+    .hero {
+        padding: 50px 60px;
+    }
+
+    .features,
+    .pricing,
+    .testimonials,
+    .faq {
+        padding: 60px;
+    }
+
+    .site-footer {
+        padding: 50px 60px 20px;
+    }
+
+    .featured-plan {
+        transform: scale(1.05);
+    }
+
+    /* Desktop hero adjustment */
+    .hero {
+        min-height: calc(100vh - 70px);
+        height: auto;
+        align-items: center;
+        padding: 50px 60px;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: 350px;
+        max-height: 350px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+
+    .hero-content {
+        width: 45%;
+    }
+
+    .hero-image {
+        width: 45%;
+    }
+}
+
+
+.features-grid,
+.pricing-grid,
+.testimonial-grid,
+.footer-grid {
+    min-width: 0;
+}
+
+.feature-card,
+.pricing-card,
+.testimonial-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+
+/* Mobile - Below 768px */
+@media (max-width: 767px) {
+
+    #features,
+    #pricing,
+    #faq {
+        scroll-margin-top: 70px;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+#features,
+#pricing,
+#faq {
+    scroll-margin-top: 110px;
+}
+
+
+
+.mobile-menu {
+    position: relative;
+}
+
+.mobile-menu summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 26px;
+    color: white;
+}
+
+.mobile-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.mobile-menu .nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: absolute;
+    top: calc(100% + 20px);
+    right: 0;
+    background-color: #142D4E;
+    padding: 20px;
+    min-width: 150px;
+}
+
+
+/* Desktop hover */
+@media (hover: hover) {
+    .cta-button:hover {
+        background-color: #1d4ed8;
+    }
+
+    .feature-card:hover,
+    .pricing-card:hover,
+    .testimonial-card:hover {
+        transform: translateY(-4px);
+    }
+}
+
+/* Mobile touch */
+@media (hover: none) {
+    .cta-button:active {
+        background-color: #1d4ed8;
+        transform: scale(0.97);
+    }
+
+    .feature-card:active,
+    .pricing-card:active,
+    .testimonial-card:active {
+        transform: scale(0.98);
+    }
+}
+
+
+/* Mobile image adjustment */
+@media (max-width: 767px) {
+    .hero-image {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .image-caption {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 767px) {
+
+
+    .hero {
+        min-height: calc(100svh - 70px);
+    }
+
+    .hero-image {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        display: block;
+    }
+
+}
+
+
+/* PROFESSIONAL TABLET DESIGN */
+
+/* TABLET - 768px to 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+
+    .hero {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+
+        min-height: calc(100svh - 60px);
+        height: auto;
+        padding: 50px 40px;
+        gap: 30px;
+    }
+
+    /* Left side */
+    .hero-content {
+        width: 46%;
+        min-width: 0;
+        align-self: center;
+    }
+
+    .hero-content h2 {
+        font-size: clamp(28px, 3.5vw, 36px);
+        line-height: 1.2;
+        margin-bottom: 12px;
+    }
+
+    .hero-content p {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    /* Right side */
+    .hero-image {
+        width: 46%;
+        min-width: 0;
+        align-self: center;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: 350px;
+        max-height: 350px;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 8px;
+    }
+
+    .image-caption {
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+    }
+}
+
