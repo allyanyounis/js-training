@@ -1,9 +1,0 @@
-{
-  "name": "utils-library",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "Day 3 utility library project",
-  "scripts": {
-    "start": "node main.js"
-  }
-}
