@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Makes the page responsive on different screen sizes -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nova Landing Page</title>
+
+    <!-- Connects HTML with CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Header section: logo + navigation -->
+    <header class="site-header">
+
+        <!-- Website logo -->
+        <div class="logo">
+            <h1>Nova</h1>
+        </div>
+
+        <!-- Navigation menu -->
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+        </nav>
+
+    </header>
+
+
+    <!-- Hero section: headline, subheading, CTA button and image -->
+    <section class="hero">
+
+        <!-- Left side of hero -->
+        <div class="hero-content">
+
+            <h2>Build Smarter. Move Faster.</h2>
+
+            <p>
+                A simple digital platform designed to help teams work better and grow faster.
+            </p>
+
+            <!-- Call-to-action button -->
+            <a href="#pricing" class="cta-button">Get Started</a>
+
+        </div>
+
+        <!-- Right side of hero -->
+        <div class="hero-image">
+
+            <img src="images/pic 1.png" alt="Team working together">
+
+        </div>
+
+    </section>
+
+
+    <!-- Features section: displays 3 feature cards -->
+    <section class="features" id="features">
+
+        <!-- Features section heading -->
+        <div class="section-heading">
+            <h2>Our Features</h2>
+            <p>Everything you need to work smarter and grow faster.</p>
+        </div>
+
+        <!-- Feature cards container -->
+        <div class="features-grid">
+
+            <!-- Feature card 1 -->
+            <article class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3>Fast Performance</h3>
+                <p>
+                    Complete your work quickly with a simple and efficient platform.
+                </p>
+            </article>
+
+            <!-- Feature card 2 -->
+            <article class="feature-card">
+                <span class="feature-icon">🔒</span>
+                <h3>Secure</h3>
+                <p>
+                    Your information is protected with reliable security features.
+                </p>
+            </article>
+
+            <!-- Feature card 3 -->
+            <article class="feature-card">
+                <span class="feature-icon">📊</span>
+                <h3>Easy Management</h3>
+                <p>
+                    Manage your tasks and important information from one place.
+                </p>
+            </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- Pricing section: displays 3 pricing plans -->
+    <section class="pricing" id="pricing">
+
+        <!-- Pricing section heading -->
+        <div class="section-heading">
+            <h2>Choose Your Plan</h2>
+            <p>Select the plan that works best for you.</p>
+        </div>
+
+        <!-- Pricing cards container -->
+        <div class="pricing-grid">
+
+            <!-- Basic plan -->
+            <article class="pricing-card">
+                <h3>Basic</h3>
+                <p class="price">$9/month</p>
+                <p>Best for individuals getting started.</p>
+            </article>
+
+            <!-- Highlighted middle plan -->
+            <article class="pricing-card featured-plan">
+                <h3>Pro</h3>
+                <p class="price">$19/month</p>
+                <p>Best for growing teams and businesses.</p>
+            </article>
+
+            <!-- Premium plan -->
+            <article class="pricing-card">
+                <h3>Premium</h3>
+                <p class="price">$29/month</p>
+                <p>Best for advanced business needs.</p>
+            </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- Testimonials section -->
+    <section class="testimonials">
+
+        <div class="section-heading">
+            <h2>What Our Users Say</h2>
+        </div>
+
+        <div class="testimonial-grid">
+
+            <!-- Testimonial 1 -->
+            <article class="testimonial-card">
+                <p>"Nova helped our team stay organized and work faster."</p>
+                <h3>Ali Khan</h3>
+            </article>
+
+            <!-- Testimonial 2 -->
+            <article class="testimonial-card">
+                <p>"The platform is simple, clean and easy to use."</p>
+                <h3>Sarah Ahmed</h3>
+            </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- FAQ section using details and summary -->
+    <section class="faq" id="faq">
+
+        <div class="section-heading">
+            <h2>Frequently Asked Questions</h2>
+        </div>
+
+        <!-- FAQ item 1 -->
+        <details>
+            <summary>What is Nova?</summary>
+            <p>
+                Nova is a simple platform designed to help teams manage their work efficiently.
+            </p>
+        </details>
+
+        <!-- FAQ item 2 -->
+        <details>
+            <summary>Can I change my plan later?</summary>
+            <p>
+                Yes, you can change your plan according to your needs.
+            </p>
+        </details>
+
+        <!-- FAQ item 3 -->
+        <details>
+            <summary>Is my data secure?</summary>
+            <p>
+                Yes, the platform is designed with security in mind.
+            </p>
+        </details>
+
+    </section>
+
+    <!-- Footer section: link columns using CSS Grid -->
+    <footer class="site-footer">
+
+        <!-- Footer grid container -->
+        <div class="footer-grid">
+
+            <!-- Footer column 1 -->
+            <div class="footer-column">
+                <h3>Nova</h3>
+                <p>Helping teams work smarter and grow faster.</p>
+            </div>
+
+            <!-- Footer column 2 -->
+            <div class="footer-column">
+                <h3>Company</h3>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+
+            <!-- Footer column 3 -->
+            <div class="footer-column">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Footer bottom text -->
+        <p class="footer-bottom">© 2026 Nova. All rights reserved.</p>
+
+    </footer>
+
+</body>
+
+</html>
