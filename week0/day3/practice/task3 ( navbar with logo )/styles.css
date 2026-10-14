@@ -1,0 +1,81 @@
+/* ==============================================
+   1. BASIC RESET
+   Remove default browser margins and list styles
+   ============================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8fafc;
+}
+
+/* ==============================================
+   2. MAIN NAVBAR (Parent Flex Container)
+   ============================================== */
+.navbar {
+  /* Step 1: Turn the navbar into a flex container */
+  display: flex;
+
+  /* Step 2: Push logo to the far left and links to the far right */
+  /* (Main Axis = Horizontal) */
+  justify-content: space-between;
+
+  /* Step 3: Vertically center both logo and links */
+  /* (Cross Axis = Vertical) */
+  align-items: center;
+
+  /* Spacing and visual bar styling */
+  padding: 16px 40px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ==============================================
+   3. NAV LINKS LIST (Nested Flex Container)
+   ============================================== */
+.nav-links {
+  /* Remove bullet points */
+  list-style: none;
+
+  /* Step 1: Make <ul> a flex container so <li> items sit in a horizontal row */
+  display: flex;
+
+  /* Step 2: Vertically center items on cross axis */
+  align-items: center;
+
+  /* Step 3: Space between navigation links */
+  gap: 24px;
+}
+
+/* ==============================================
+   4. LOGO STYLING (Left Item)
+   ============================================== */
+.logo {
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+  color: #111827;
+}
+
+.logo span {
+  color: #2563eb;
+}
+
+/* ==============================================
+   5. LINK STYLING (Right Items)
+   ============================================== */
+.nav-links a {
+  text-decoration: none;
+  color: #4b5563;
+  font-size: 16px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.nav-links a:hover {
+  color: #2563eb;
+}

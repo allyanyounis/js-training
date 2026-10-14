@@ -1,0 +1,249 @@
+
+:root {
+    --primary-color: #2563eb;
+    --background-color: #f8fafc;
+    --text-color: #1e293b;
+
+}
+
+h1, h2, h3 {
+    font-family: 'Poppins', sans-serif;
+}  
+
+body {
+    background-color: var(--background-color);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+* {
+    margin: 10px;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+header {
+    text-align: center;
+}
+
+.contact-links {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    list-style: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+.contact-links a {
+    text-decoration: none;
+}
+
+.contact-links a {
+    text-decoration: underline;
+}
+
+.skills-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.skills-list {
+    list-style-position: inside;
+    padding: 0;
+}
+
+.contact-links a {
+    text-decoration: underline;
+    color: blue;
+    transition: 0.3s ease;
+}
+
+.contact-links a:hover {
+    color: green;
+    transform: translateY(-3px);
+}
+
+main {
+    max-width: 800px;
+    margin: 30px auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid #2495e0;
+    padding-bottom: 6px;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+article {
+    background-color: #f8fafc;
+    border-left: 4px solid #3498db;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 0 6px 6px 0;
+}
+
+body {
+    background-color: #f1f5f9;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #334155;
+    line-height: 1.6;
+}
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header {
+    max-width: 800px;
+    margin: 30px auto 0 auto;
+    background-color: #ffffff;
+    padding: 30px 30px 10px;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+    background-color: #ffffff;
+    padding: 20px 30px 30px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+
+article ul {
+    padding-left: 20px;
+    margin-top: 8px;
+}
+
+article li {
+    margin-bottom: 5px;
+}
+
+.contact-links a {
+    color: #2563eb;
+    text-decoration: none;
+    border-bottom: 1.5px solid #2563eb;
+    transition: all 0.2s ease;
+}
+
+.contact-links a:hover {
+    color: #e11d48;
+    border-bottom-color: #e11d48;
+}
+
+.contact-links a:active,
+.contact-links a:focus {
+    color: #059669;
+    border-bottom-color: #059669;
+}
+
+
+article a {
+    color: #2563eb;
+    text-decoration: none;
+    border-bottom: 1.5px solid #2563eb;
+    display: inline-block;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+}
+
+article a:hover {
+    color: #e11d48;
+    border-bottom-color: #e11d48;
+}
+
+article a:active,
+article a:focus {
+    color: #059669;
+    border-bottom-color: #059669;
+}
+
+
+.required {
+    color: #e11d48;
+    font-weight: bold;
+}
+
+
+form label[for] {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+form input[type="text"],
+form input[type="email"],
+form textarea {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+
+fieldset {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0;
+}
+
+legend {
+    padding: 0 6px;
+    font-weight: 600;
+}
+
+button[type="submit"] {
+    display: block;
+    margin-top: 15px;
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #1d4ed8;
+}
+
+
+header {
+    padding-bottom: 5px;
+}
+
+main {
+    padding-top: 10px;
+}
+
+#about-heading {
+    margin-top: 5px;
+}
