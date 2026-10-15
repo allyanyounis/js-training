@@ -1,0 +1,37 @@
+function TodoItem({ todo, onToggle, onDelete }) {
+  return (
+    <li className={`todo-item ${todo.completed ? "completed" : ""}`}>
+      <div className="todo-content">
+        <input
+          type="checkbox"
+          className="todo-checkbox"
+          checked={todo.completed}
+          onChange={() => onToggle(todo.id)}
+          aria-label={`Mark ${todo.text} as ${
+            todo.completed ? "active" : "done"
+          }`}
+        />
+
+        <span
+          className={`priority-dot ${todo.priority}`}
+          role="img"
+          aria-label={`${todo.priority} priority`}
+          title={`${todo.priority} priority`}
+        />
+
+        <span className="todo-text">{todo.text}</span>
+      </div>
+
+      <button
+        type="button"
+        className="delete-btn"
+        onClick={() => onDelete(todo.id)}
+        aria-label={`Delete ${todo.text}`}
+      >
+        &times;
+      </button>
+    </li>
+  );
+}
+
+export default TodoItem;
