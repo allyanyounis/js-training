@@ -2,12 +2,15 @@
 
 Handles patient appointment scheduling, cancellation, listing,
 clinic configuration, and user authentication with WebSocket support.
+Supports direct REST calls from Next.js dashboard as well as
+VAPI AI Voice Agent tool calls and webhook payloads.
 """
 
 import datetime as dt
+import json
 import os
 import sys
-from typing import List, Optional
+from typing import List, Optional, Tuple, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,8 +20,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 import uvicorn
 
-# Ensure the root directory is on the system path for database package import
+# Ensure the root and backend directories are on the system path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from database.database import Appointment, ClinicSettings, User, get_db, init_db
 
@@ -49,14 +53,14 @@ init_db()
 # --- Appointment Schemas ---
 class AppointmentRequest(BaseModel):
     patient_name: str
-    reason: str
+    reason: Optional[str] = "General Consultation"
     start_time: dt.datetime
 
 
 class AppointmentResponse(BaseModel):
     id: int
     patient_name: str
-    reason: str | None
+    reason: Optional[str] = None
     start_time: dt.datetime
     canceled: bool
     created_at: dt.datetime
@@ -72,7 +76,7 @@ class CancelAppointmentResponse(BaseModel):
 
 
 class ListAppointmentRequest(BaseModel):
-    date: dt.date | None = None
+    date: Optional[dt.date] = None
 
 
 # --- Clinic Settings Schemas ---
@@ -149,7 +153,6 @@ class ConnectionManager:
             try:
                 await connection.send_text(message)
             except Exception:
-                # Remove inactive connection
                 self.disconnect(connection)
 
 
@@ -163,7 +166,6 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            # Echo back or handle incoming messages
             await manager.send_personal_message(f"Received: {data}", websocket)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -175,7 +177,6 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/auth/signup", response_model=UserResponse)
 def signup(request: SignUpRequest, db: Session = Depends(get_db)):
     """Register a new clinic staff account."""
-    # Check if a user with this email already exists
     stmt = select(User).where(User.email == request.email)
     existing_user = db.execute(stmt).scalars().first()
     if existing_user:
@@ -255,122 +256,301 @@ def update_settings(request: UpdateClinicSettingsRequest, db: Session = Depends(
 
 
 # ---------------------------------------------------------------------------
-# Appointment Management Endpoints
+# Parsing and Payload Extraction Helpers
 # ---------------------------------------------------------------------------
-@app.post("/schedule_appointment")
-@app.post("/schedule_appointment/")
-def schedule_appointment(request: AppointmentRequest, db: Session = Depends(get_db)):
-    """Schedule a new appointment after applying all business validations."""
+def _parse_time_value(time_str: str) -> Optional[dt.time]:
+    """Parse time string in multiple common formats."""
+    if not time_str or not isinstance(time_str, str):
+        return None
+    time_str = time_str.strip().upper()
+    for fmt in ["%I:%M %p", "%I:%M%p", "%I %p", "%I%p", "%H:%M:%S", "%H:%M"]:
+        try:
+            return dt.datetime.strptime(time_str, fmt).time()
+        except ValueError:
+            pass
+    return None
+
+
+def _parse_date_value(val: Any) -> Optional[dt.date]:
+    """Safely parse date from date object, datetime object, or string."""
+    if not val:
+        return None
+    if isinstance(val, dt.datetime):
+        return val.date()
+    if isinstance(val, dt.date):
+        return val
+    if isinstance(val, str):
+        val = val.strip()
+        if "T" in val:
+            val = val.split("T")[0]
+        if " " in val:
+            val = val.split(" ")[0]
+        try:
+            return dt.date.fromisoformat(val)
+        except Exception:
+            pass
+        for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y"]:
+            try:
+                return dt.datetime.strptime(val, fmt).date()
+            except ValueError:
+                pass
+    return None
+
+
+def _parse_datetime_value(val: Any, time_val: Any = None) -> Optional[dt.datetime]:
+    """Parse datetime from ISO strings, combined date+time, or naive datetime."""
+    if not val:
+        return None
+    if isinstance(val, dt.datetime):
+        return val.replace(tzinfo=None) if val.tzinfo else val
+    if isinstance(val, dt.date):
+        if time_val:
+            parsed_time = _parse_time_value(str(time_val))
+            if parsed_time:
+                return dt.datetime.combine(val, parsed_time)
+        return dt.datetime.combine(val, dt.time(12, 0))
+
+    if isinstance(val, str):
+        val = val.strip()
+        clean_val = val
+        if clean_val.endswith("Z") or clean_val.endswith("z"):
+            clean_val = clean_val[:-1]
+
+        for fmt in [
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%d",
+        ]:
+            try:
+                parsed = dt.datetime.strptime(clean_val, fmt)
+                if fmt == "%Y-%m-%d" and time_val:
+                    parsed_time = _parse_time_value(str(time_val))
+                    if parsed_time:
+                        return dt.datetime.combine(parsed.date(), parsed_time)
+                return parsed
+            except ValueError:
+                pass
+
+        try:
+            parsed = dt.datetime.fromisoformat(clean_val)
+            return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+        except Exception:
+            pass
+
+    return None
+
+
+async def _extract_tool_payload(request: Request) -> Tuple[dict, Optional[str], Optional[str]]:
+    """Extract tool arguments, tool_call_id, and function name from incoming request.
+
+    Supports:
+    - VAPI webhook payload: body["message"]["toolCalls"]
+    - VAPI direct toolCall: body["toolCall"] or body["toolCalls"]
+    - Standard REST payload: body
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    tool_call_id = None
+    func_name = None
+    args = {}
+
+    if isinstance(body, dict):
+        if "message" in body and isinstance(body["message"], dict):
+            msg = body["message"]
+            tool_calls = msg.get("toolCalls") or msg.get("tools") or []
+            if tool_calls and isinstance(tool_calls, list) and len(tool_calls) > 0:
+                first_tool = tool_calls[0]
+                tool_call_id = first_tool.get("id")
+                fn = first_tool.get("function", {})
+                func_name = fn.get("name")
+                raw_args = fn.get("arguments", {})
+                if isinstance(raw_args, str):
+                    try:
+                        args = json.loads(raw_args)
+                    except Exception:
+                        args = {}
+                elif isinstance(raw_args, dict):
+                    args = raw_args
+        elif "toolCall" in body and isinstance(body["toolCall"], dict):
+            tc = body["toolCall"]
+            tool_call_id = tc.get("id")
+            fn = tc.get("function", {})
+            func_name = fn.get("name")
+            raw_args = fn.get("arguments", {})
+            if isinstance(raw_args, str):
+                try:
+                    args = json.loads(raw_args)
+                except Exception:
+                    args = {}
+            elif isinstance(raw_args, dict):
+                args = raw_args
+        elif "toolCalls" in body and isinstance(body["toolCalls"], list) and len(body["toolCalls"]) > 0:
+            tc = body["toolCalls"][0]
+            tool_call_id = tc.get("id")
+            fn = tc.get("function", {})
+            func_name = fn.get("name")
+            raw_args = fn.get("arguments", {})
+            if isinstance(raw_args, str):
+                try:
+                    args = json.loads(raw_args)
+                except Exception:
+                    args = {}
+            elif isinstance(raw_args, dict):
+                args = raw_args
+        else:
+            args = body
+
+    return args, tool_call_id, func_name
+
+
+# ---------------------------------------------------------------------------
+# Core Appointment Scheduling Logic
+# ---------------------------------------------------------------------------
+async def schedule_appointment_core(
+    patient_name: str,
+    reason: str,
+    start_time: dt.datetime,
+    tool_call_id: Optional[str],
+    db: Session
+):
+    """Core scheduling function with full business rule enforcement.
+
+    For VAPI voice callers (tool_call_id present), validation failures are returned
+    as 200 responses with the message in 'results' so the AI Receptionist can read
+    the friendly explanation to the caller rather than triggering a technical error fallback.
+    """
     settings = db.execute(select(ClinicSettings)).scalar_one_or_none()
     if not settings:
         settings = ClinicSettings()
 
-    req_date_str = request.start_time.strftime('%Y-%m-%d')
+    def respond_error(detail: str):
+        if tool_call_id:
+            return {
+                "results": [
+                    {
+                        "toolCallId": tool_call_id,
+                        "result": detail
+                    }
+                ]
+            }
+        raise HTTPException(status_code=400, detail=detail)
+
+    req_date_str = start_time.strftime('%Y-%m-%d')
     holidays = [h.strip() for h in settings.holidays.split(',')] if settings.holidays else []
 
     # 1. Holiday Check
     if req_date_str in holidays:
-        raise HTTPException(
-            status_code=400,
-            detail=f"I'm sorry, but the clinic is closed for a holiday on {request.start_time.strftime('%B %d, %Y')}."
-        )
+        return respond_error(f"I'm sorry, but the clinic is closed for a holiday on {start_time.strftime('%B %d, %Y')}.")
 
     # 2. Working Days Check (0=Monday ... 6=Sunday)
     working_days = [int(d.strip()) for d in settings.working_days.split(',')] if settings.working_days else []
-    if request.start_time.weekday() not in working_days:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"I'm sorry, but the clinic is closed on this day of the week. "
-                f"{request.start_time.strftime('%B %d, %Y')} falls on a non-working day. "
-                "Please choose a valid working day."
-            )
+    if start_time.weekday() not in working_days:
+        return respond_error(
+            f"I'm sorry, but the clinic is closed on this day of the week. "
+            f"{start_time.strftime('%B %d, %Y')} falls on a non-working day. "
+            "Please choose a valid working day."
         )
 
     # 3. Booking Window Check (not in the past, within 10 days)
-    current_date = dt.datetime.now().date()
-    appointment_date = request.start_time.date()
-
-    if appointment_date < current_date:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"I'm sorry, but you cannot book an appointment in the past. "
-                f"Please choose a date today or up to 10 days from today."
-            )
+    current_dt = dt.datetime.now()
+    if start_time < current_dt - dt.timedelta(minutes=15):
+        return respond_error(
+            "I'm sorry, but you cannot book an appointment in the past. "
+            "Please choose a date and time today or up to 10 days from today."
         )
 
-    if appointment_date > current_date + dt.timedelta(days=10):
-        max_date = current_date + dt.timedelta(days=10)
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"I'm sorry, but appointments can only be booked up to 10 days in advance. "
-                f"The latest date you can book is {max_date.strftime('%B %d, %Y')}."
-            )
+    if start_time.date() > current_dt.date() + dt.timedelta(days=10):
+        max_date = current_dt.date() + dt.timedelta(days=10)
+        return respond_error(
+            f"I'm sorry, but appointments can only be booked up to 10 days in advance. "
+            f"The latest date you can book is {max_date.strftime('%B %d, %Y')}."
         )
 
     # 4. Operating Hours Check
-    if request.start_time.hour < settings.start_hour or request.start_time.hour >= settings.end_hour:
+    if start_time.hour < settings.start_hour or start_time.hour >= settings.end_hour:
         start_ampm = "AM" if settings.start_hour < 12 else "PM"
         end_ampm = "AM" if settings.end_hour < 12 else "PM"
         sh = settings.start_hour % 12 or 12
         eh = settings.end_hour % 12 or 12
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"I'm sorry, but your requested appointment time of "
-                f"{request.start_time.strftime('%I:%M %p')} is outside clinic hours. "
-                f"The doctor is only available between {sh}:00 {start_ampm} and {eh}:00 {end_ampm}. "
-                "Please choose a different time slot."
-            )
+        return respond_error(
+            f"I'm sorry, but your requested appointment time of "
+            f"{start_time.strftime('%I:%M %p')} is outside clinic hours. "
+            f"The doctor is only available between {sh}:00 {start_ampm} and {eh}:00 {end_ampm}. "
+            "Please choose a different time slot."
         )
 
     # 5. Same-Person Duplicate Booking Check
     same_person_booking = db.execute(
         select(Appointment)
-        .where(Appointment.patient_name == request.patient_name)
-        .where(Appointment.start_time == request.start_time)
+        .where(Appointment.patient_name == patient_name)
+        .where(Appointment.start_time == start_time)
         .where(Appointment.canceled == False)
     ).scalar_one_or_none()
 
     if same_person_booking:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"It looks like {request.patient_name} already has an appointment "
-                f"on {request.start_time.strftime('%B %d, %Y')} at {request.start_time.strftime('%I:%M %p')}. "
-                "You cannot book the same slot twice. Please choose a different time."
-            )
+        return respond_error(
+            f"It looks like {patient_name} already has an appointment "
+            f"on {start_time.strftime('%B %d, %Y')} at {start_time.strftime('%I:%M %p')}. "
+            "You cannot book the same slot twice. Please choose a different time."
         )
 
     # 6. Slot Availability Check (no conflicting active booking)
     existing_appointment = db.execute(
         select(Appointment)
-        .where(Appointment.start_time == request.start_time)
+        .where(Appointment.start_time == start_time)
         .where(Appointment.canceled == False)
     ).scalar_one_or_none()
 
     if existing_appointment:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"I'm sorry, but the {request.start_time.strftime('%I:%M %p')} slot on "
-                f"{request.start_time.strftime('%B %d, %Y')} is already booked by another patient. "
-                "Please choose a different time slot."
-            )
+        return respond_error(
+            f"I'm sorry, but the {start_time.strftime('%I:%M %p')} slot on "
+            f"{start_time.strftime('%B %d, %Y')} is already booked by another patient. "
+            "Please choose a different time slot."
         )
 
     # Create and persist new appointment
     new_appointment = Appointment(
-        patient_name=request.patient_name,
-        reason=request.reason,
-        start_time=request.start_time,
+        patient_name=patient_name,
+        reason=reason,
+        start_time=start_time,
     )
     db.add(new_appointment)
     db.commit()
     db.refresh(new_appointment)
+
+    # Broadcast event to frontend via WebSocket
+    try:
+        await manager.broadcast("new_appointment")
+    except Exception:
+        pass
+
+    success_msg = (
+        f"Appointment confirmed for {new_appointment.patient_name} on "
+        f"{new_appointment.start_time.strftime('%B %d, %Y')} at "
+        f"{new_appointment.start_time.strftime('%I:%M %p')} for {new_appointment.reason}."
+    )
+
+    if tool_call_id:
+        return {
+            "results": [
+                {
+                    "toolCallId": tool_call_id,
+                    "result": success_msg
+                }
+            ],
+            "id": new_appointment.id,
+            "patient_name": new_appointment.patient_name,
+            "reason": new_appointment.reason,
+            "start_time": new_appointment.start_time,
+            "canceled": new_appointment.canceled,
+            "created_at": new_appointment.created_at
+        }
 
     return AppointmentResponse(
         id=new_appointment.id,
@@ -382,16 +562,61 @@ def schedule_appointment(request: AppointmentRequest, db: Session = Depends(get_
     )
 
 
+# ---------------------------------------------------------------------------
+# Appointment Management Endpoints
+# ---------------------------------------------------------------------------
+@app.post("/schedule_appointment")
+@app.post("/schedule_appointment/")
+async def schedule_appointment(request: Request, db: Session = Depends(get_db)):
+    """Schedule a new appointment, accepting direct REST or VAPI tool-call requests."""
+    args, tool_call_id, _ = await _extract_tool_payload(request)
+
+    patient_name = args.get("patient_name") or args.get("patientName") or args.get("name")
+    reason = args.get("reason") or args.get("notes") or args.get("details") or "General Consultation"
+
+    start_time_raw = args.get("start_time") or args.get("startTime") or args.get("datetime")
+    time_raw = args.get("time")
+    date_raw = args.get("date")
+
+    parsed_dt = _parse_datetime_value(start_time_raw or date_raw, time_val=time_raw)
+
+    if not patient_name:
+        detail = "Patient name is required to book an appointment."
+        if tool_call_id:
+            return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
+        raise HTTPException(status_code=400, detail=detail)
+
+    if not parsed_dt:
+        detail = "A valid appointment date and time is required."
+        if tool_call_id:
+            return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
+        raise HTTPException(status_code=400, detail=detail)
+
+    return await schedule_appointment_core(patient_name, reason, parsed_dt, tool_call_id, db)
+
+
 @app.post("/cancel_appointment")
 @app.post("/cancel_appointment/")
-def cancel_appointment(request: CancelAppointmentRequest, db: Session = Depends(get_db)):
+async def cancel_appointment(request: Request, db: Session = Depends(get_db)):
     """Cancel existing appointments for a patient on a specific date."""
-    start_dt = dt.datetime.combine(request.date, dt.time.min)
+    args, tool_call_id, _ = await _extract_tool_payload(request)
+
+    patient_name = args.get("patient_name") or args.get("patientName") or args.get("name")
+    date_raw = args.get("date") or args.get("start_time") or args.get("startTime")
+    target_date = _parse_date_value(date_raw)
+
+    if not patient_name or not target_date:
+        detail = "Patient name and appointment date are required for cancellation."
+        if tool_call_id:
+            return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
+        raise HTTPException(status_code=400, detail=detail)
+
+    start_dt = dt.datetime.combine(target_date, dt.time.min)
     end_dt = start_dt + dt.timedelta(days=1)
 
     result = db.execute(
         select(Appointment)
-        .where(Appointment.patient_name == request.patient_name)
+        .where(Appointment.patient_name.ilike(patient_name))
         .where(Appointment.start_time >= start_dt)
         .where(Appointment.start_time < end_dt)
         .where(Appointment.canceled == False)
@@ -399,35 +624,34 @@ def cancel_appointment(request: CancelAppointmentRequest, db: Session = Depends(
 
     appointments = result.scalars().all()
     if not appointments:
-        raise HTTPException(
-            status_code=404,
-            detail="No matching appointment for the details found in our system"
-        )
+        detail = f"No matching appointment found for {patient_name} on {target_date.strftime('%B %d, %Y')}."
+        if tool_call_id:
+            return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
+        raise HTTPException(status_code=404, detail=detail)
 
     for appointment in appointments:
         appointment.canceled = True
 
     db.commit()
 
+    try:
+        await manager.broadcast("cancel_appointment")
+    except Exception:
+        pass
+
+    success_msg = f"Successfully canceled appointment for {patient_name} on {target_date.strftime('%B %d, %Y')}."
+    if tool_call_id:
+        return {
+            "results": [
+                {
+                    "toolCallId": tool_call_id,
+                    "result": success_msg
+                }
+            ],
+            "canceled_count": len(appointments)
+        }
+
     return CancelAppointmentResponse(canceled_count=len(appointments))
-
-
-def _parse_date_value(val):
-    """Helper to safely parse dates from string or date objects."""
-    if not val:
-        return None
-    if isinstance(val, dt.date):
-        return val
-    if isinstance(val, str):
-        val = val.strip()
-        # Handle ISO timestamp strings like '2026-10-27T12:00:00'
-        if "T" in val:
-            val = val.split("T")[0]
-        try:
-            return dt.date.fromisoformat(val)
-        except Exception:
-            return None
-    return None
 
 
 @app.api_route("/check_doctor_availability", methods=["GET", "POST"])
@@ -440,57 +664,36 @@ async def list_appointments(
     date: str | None = None,
     db: Session = Depends(get_db)
 ):
-    """List appointments sorted by time and provide doctor availability hours.
-
-    Supports:
-    - VAPI GET request: Returns doctor working hours, working days, and schedule summary
-    - Frontend POST request: Returns raw appointments array
-    """
+    """List appointments and provide doctor availability info for VAPI and frontend."""
     target_date = _parse_date_value(date)
+    tool_call_id = None
 
-    # If it's a POST request, try extracting date from body if not already in query
     if request.method == "POST":
-        try:
-            body = await request.json()
-            if isinstance(body, dict):
-                # Handle VAPI tool-call wrapped format if sent
-                if "message" in body and "toolCalls" in body.get("message", {}):
-                    tool_calls = body["message"]["toolCalls"]
-                    if tool_calls and "function" in tool_calls[0]:
-                        args = tool_calls[0]["function"].get("arguments", {})
-                        if isinstance(args, str):
-                            import json
-                            args = json.loads(args)
-                        if "date" in args and not target_date:
-                            target_date = _parse_date_value(args.get("date"))
-                elif "date" in body and body["date"] and not target_date:
-                    target_date = _parse_date_value(body["date"])
-        except Exception:
-            pass
+        args, tool_call_id, _ = await _extract_tool_payload(request)
+        if not target_date:
+            date_arg = args.get("date") or args.get("start_time")
+            target_date = _parse_date_value(date_arg)
 
     query = select(Appointment)
-
     if target_date:
         start_dt = dt.datetime.combine(target_date, dt.time.min)
         end_dt = start_dt + dt.timedelta(days=1)
         query = query.where(Appointment.start_time >= start_dt).where(Appointment.start_time < end_dt)
 
     query = query.order_by(Appointment.start_time.asc())
-
     result = db.execute(query)
+
     booked_appointments = []
     for appointment in result.scalars().all():
-        appointment_obj = AppointmentResponse(
+        booked_appointments.append(AppointmentResponse(
             id=appointment.id,
             patient_name=appointment.patient_name,
             reason=appointment.reason,
             start_time=appointment.start_time,
             canceled=appointment.canceled,
             created_at=appointment.created_at
-        )
-        booked_appointments.append(appointment_obj)
+        ))
 
-    # Fetch clinic settings to supply availability hours and days
     settings = db.execute(select(ClinicSettings)).scalar_one_or_none()
     if not settings:
         settings = ClinicSettings()
@@ -506,21 +709,159 @@ async def list_appointments(
     working_day_names = [day_map[d] for d in working_day_ints if d in day_map]
     working_days_text = ", ".join(working_day_names) if working_day_names else "Monday through Friday"
 
-    # For VAPI (GET requests or availability checks), return rich availability info
-    if request.method == "GET" or "check_doctor_availability" in request.url.path:
+    active_appts = [a for a in booked_appointments if not a.canceled]
+    if target_date:
+        if active_appts:
+            slots_str = ", ".join([a.start_time.strftime("%I:%M %p") for a in active_appts])
+            summary_text = (
+                f"On {target_date.strftime('%B %d, %Y')}, doctor available hours are {hours_text}. "
+                f"Already booked slots: {slots_str}. All other slots are available."
+            )
+        else:
+            summary_text = (
+                f"On {target_date.strftime('%B %d, %Y')}, doctor available hours are {hours_text}. "
+                "All slots are currently open."
+            )
+    else:
+        summary_text = f"The doctor is available between {hours_text} on {working_days_text}."
+
+    if tool_call_id:
         return {
+            "results": [
+                {
+                    "toolCallId": tool_call_id,
+                    "result": summary_text
+                }
+            ],
             "doctor_available_hours": hours_text,
             "working_days": working_days_text,
             "slot_duration_minutes": settings.slot_duration_minutes,
-            "summary": f"The doctor is available between {hours_text} on {working_days_text}.",
+            "summary": summary_text,
             "booked_appointments": booked_appointments,
             "appointments": booked_appointments
         }
 
-    # For Frontend POST requests, return the appointments list
+    if request.method == "GET" or "check_doctor_availability" in request.url.path or "doctor_availability" in request.url.path:
+        return {
+            "doctor_available_hours": hours_text,
+            "working_days": working_days_text,
+            "slot_duration_minutes": settings.slot_duration_minutes,
+            "summary": summary_text,
+            "booked_appointments": booked_appointments,
+            "appointments": booked_appointments
+        }
+
     return booked_appointments
 
 
+# ---------------------------------------------------------------------------
+# General Webhook & Root Endpoints
+# ---------------------------------------------------------------------------
+@app.get("/")
+def health_check():
+    """Health check endpoint."""
+    return {"status": "ok", "message": "DocAssist AI Backend is active and running"}
+
+
+@app.post("/")
+@app.post("/webhook")
+@app.post("/vapi")
+async def vapi_webhook_router(request: Request, db: Session = Depends(get_db)):
+    """General webhook router for VAPI if configured to hit root server URL."""
+    args, tool_call_id, func_name = await _extract_tool_payload(request)
+
+    if not tool_call_id and not func_name:
+        return {"status": "ok", "message": "DocAssist AI Backend is active and running"}
+
+    func_lower = (func_name or "").lower()
+
+    if "schedule" in func_lower or "book" in func_lower:
+        patient_name = args.get("patient_name") or args.get("patientName") or args.get("name")
+        reason = args.get("reason") or args.get("notes") or args.get("details") or "General Consultation"
+        start_time_raw = args.get("start_time") or args.get("startTime") or args.get("datetime")
+        parsed_dt = _parse_datetime_value(start_time_raw or args.get("date"), time_val=args.get("time"))
+
+        if not patient_name or not parsed_dt:
+            return {
+                "results": [
+                    {
+                        "toolCallId": tool_call_id,
+                        "result": "Please provide the patient name and desired appointment date and time."
+                    }
+                ]
+            }
+        return await schedule_appointment_core(patient_name, reason, parsed_dt, tool_call_id, db)
+
+    elif "cancel" in func_lower:
+        patient_name = args.get("patient_name") or args.get("patientName") or args.get("name")
+        date_raw = args.get("date") or args.get("start_time")
+        target_date = _parse_date_value(date_raw)
+
+        if not patient_name or not target_date:
+            return {
+                "results": [
+                    {
+                        "toolCallId": tool_call_id,
+                        "result": "Please provide the patient name and date to cancel."
+                    }
+                ]
+            }
+
+        start_dt = dt.datetime.combine(target_date, dt.time.min)
+        end_dt = start_dt + dt.timedelta(days=1)
+        result = db.execute(
+            select(Appointment)
+            .where(Appointment.patient_name.ilike(patient_name))
+            .where(Appointment.start_time >= start_dt)
+            .where(Appointment.start_time < end_dt)
+            .where(Appointment.canceled == False)
+        )
+        appointments = result.scalars().all()
+        if not appointments:
+            return {
+                "results": [
+                    {
+                        "toolCallId": tool_call_id,
+                        "result": f"No active appointment was found for {patient_name} on {target_date.strftime('%B %d, %Y')}."
+                    }
+                ]
+            }
+        for a in appointments:
+            a.canceled = True
+        db.commit()
+        return {
+            "results": [
+                {
+                    "toolCallId": tool_call_id,
+                    "result": f"Successfully canceled appointment for {patient_name} on {target_date.strftime('%B %d, %Y')}."
+                }
+            ]
+        }
+
+    elif "availab" in func_lower or "list" in func_lower or "doctor" in func_lower:
+        date_arg = args.get("date") or args.get("start_time")
+        target_date = _parse_date_value(date_arg)
+        settings = db.execute(select(ClinicSettings)).scalar_one_or_none() or ClinicSettings()
+        start_ampm = "AM" if settings.start_hour < 12 else "PM"
+        end_ampm = "AM" if settings.end_hour < 12 else "PM"
+        sh = settings.start_hour % 12 or 12
+        eh = settings.end_hour % 12 or 12
+        hours_text = f"{sh}:00 {start_ampm} to {eh}:00 {end_ampm}"
+        day_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
+        working_day_ints = [int(d.strip()) for d in settings.working_days.split(",") if d.strip().isdigit()]
+        working_day_names = [day_map[d] for d in working_day_ints if d in day_map]
+        working_days_text = ", ".join(working_day_names) if working_day_names else "Monday through Friday"
+        summary = f"The doctor is available between {hours_text} on {working_days_text}."
+        return {
+            "results": [
+                {
+                    "toolCallId": tool_call_id,
+                    "result": summary
+                }
+            ]
+        }
+
+    return {"results": [{"toolCallId": tool_call_id, "result": "Function not recognized."}]}
 
 
 # ---------------------------------------------------------------------------
@@ -528,4 +869,3 @@ async def list_appointments(
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("backend:app", host="127.0.0.1", port=4444, reload=True)
-
