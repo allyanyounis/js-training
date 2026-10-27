@@ -170,3 +170,6 @@ MIT License
 ## Project Documentation
 
 [Architecture and Technology Comparison (PDF)](Clinic-Assistant-AI-Receptionist/docs/architecture-and-technology-comparison.pdf)
+
+- [Project Presentation (PowerPoint)](Clinic-Assistant-AI-Receptionist/docs/docassist-ai-project-presentation.pptx)
+- [Project Presentation (PDF)](Clinic-Assistant-AI-Receptionist/docs/docassist-ai-project-presentation.pdf)
