@@ -166,3 +166,7 @@ All bookings (via voice or dashboard) strictly enforce:
 ## 📄 License
 
 MIT License
+
+## Project Documentation
+
+[Architecture and Technology Comparison (PDF)](Clinic-Assistant-AI-Receptionist/docs/architecture-and-technology-comparison.pdf)
