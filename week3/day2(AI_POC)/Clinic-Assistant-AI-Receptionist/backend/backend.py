@@ -55,6 +55,7 @@ class AppointmentRequest(BaseModel):
     patient_name: str
     reason: Optional[str] = "General Consultation"
     start_time: dt.datetime
+    transcript: Optional[str] = None
 
 
 class AppointmentResponse(BaseModel):
@@ -64,6 +65,12 @@ class AppointmentResponse(BaseModel):
     start_time: dt.datetime
     canceled: bool
     created_at: dt.datetime
+    transcript: Optional[str] = None
+
+
+class UpdateTranscriptRequest(BaseModel):
+    appointment_id: Optional[int] = None
+    transcript: str
 
 
 class CancelAppointmentRequest(BaseModel):

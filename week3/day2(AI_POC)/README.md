@@ -163,6 +163,3 @@ All bookings (via voice or dashboard) strictly enforce:
 
 ---
 
-## 📄 License
-
-MIT License

@@ -4,7 +4,7 @@ import datetime as dt
 import os
 from typing import Generator
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # ---------------------------------------------------------------------------
@@ -47,6 +47,7 @@ class Appointment(Base):
     reason = Column(String, nullable=True)
     start_time = Column(DateTime, index=True)
     canceled = Column(Boolean, default=False)
+    transcript = Column(Text, nullable=True)
     created_at = Column(DateTime, default=dt.datetime.utcnow)
 
 
@@ -77,8 +78,26 @@ class User(Base):
 # Helper Functions & Dependency
 # ---------------------------------------------------------------------------
 def init_db() -> None:
-    """Create all tables in the SQLite database if they do not exist."""
+    """Create all tables in the database and ensure column schema is up to date."""
     Base.metadata.create_all(bind=engine)
+    try:
+        with engine.connect() as conn:
+            if engine.dialect.name == "sqlite":
+                res = conn.exec_driver_sql("PRAGMA table_info(appointments);")
+                cols = [row[1] for row in res.fetchall()]
+                if "transcript" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE appointments ADD COLUMN transcript TEXT;")
+                    conn.commit()
+            elif engine.dialect.name == "postgresql":
+                res = conn.exec_driver_sql(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name='appointments';"
+                )
+                cols = [row[0] for row in res.fetchall()]
+                if "transcript" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE appointments ADD COLUMN transcript TEXT;")
+                    conn.commit()
+    except Exception as e:
+        print(f"Schema check error: {e}")
 
 
 def get_db() -> Generator[Session, None, None]:
