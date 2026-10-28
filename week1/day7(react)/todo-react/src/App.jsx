@@ -4,7 +4,11 @@ import FilterBar from "./components/FilterBar";
 import TodoFooter from "./components/TodoFooter";
 
 
-import { useState, useEffect } from "react";
+import { useState, 
+  
+
+
+ } from "react";
 import "./App.css";
 
 function TodoApp() {
@@ -56,6 +60,7 @@ function TodoApp() {
  useEffect(() => {
   localStorage.setItem("todos", JSON.stringify(todos));
 }, [todos]);
+
 
 
 

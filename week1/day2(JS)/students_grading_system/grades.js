@@ -16,7 +16,8 @@ const getGrade = (average) => {
 };
 
 
-// Students data
+// Students data // array of object , each object contains 
+// 3 properties name, class, scores(array)
 const students = [
     { name: "Ali", class: "A", scores: [85, 90, 80] },
     { name: "Sara", class: "B", scores: [95, 88, 92] },
