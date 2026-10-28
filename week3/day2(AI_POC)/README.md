@@ -146,7 +146,7 @@ npm run dev
 | `POST` | `/settings/` | Update clinic operating hours and holiday schedules |
 | `POST` | `/auth/signup` | Register clinic staff account |
 | `POST` | `/auth/login` | Staff authentication with hashed credentials |
-| `WS` | `/ws` | Real-time WebSocket connection for live UI refreshes |
+| `WS` | `/ws` | Real-time WebSocket connegit ction for live UI refreshes |
 | `POST` | `/webhook` / `/vapi` | General webhook router for VAPI tool execution |
 
 ---
