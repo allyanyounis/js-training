@@ -63,8 +63,6 @@ export function TopSummaryCards({
                 </div>
             </div>
 
-
-
             {/* 3. Cancellations (matches "Payments" Bar Chart) */}
             <div className="bg-white p-5 rounded-md shadow-sm border border-gray-100 flex flex-col justify-between">
                 <div>
@@ -77,8 +75,8 @@ export function TopSummaryCards({
                     </div>
                 </div>
 
-                <div className="h-12 mt-2">
-                    <ResponsiveContainer width="100%" height="100%">
+                <div className="mt-2 h-12 w-full min-w-0">
+                    <ResponsiveContainer width="100%" height={48} minWidth={0}>
                         <BarChart data={paymentsData}>
                             <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ display: 'none' }} />
                             <Bar dataKey="uv" fill="#8B2635" barSize={12} radius={[2, 2, 0, 0]} />
