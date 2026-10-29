@@ -446,6 +446,9 @@ async def schedule_appointment_core(
         settings = ClinicSettings()
 
     def respond_error(detail: str):
+        # Vapi API Request tools may send plain arguments without a toolCallId.
+        # Return a readable JSON result instead of HTTP 4xx so the assistant can
+        # explain business-rule failures (e.g. clinic closed on Saturday).
         if tool_call_id:
             return {
                 "results": [
@@ -455,7 +458,7 @@ async def schedule_appointment_core(
                     }
                 ]
             }
-        raise HTTPException(status_code=400, detail=detail)
+        return {"success": False, "message": detail}
 
     req_date_str = start_time.strftime('%Y-%m-%d')
     holidays = [h.strip() for h in settings.holidays.split(',')] if settings.holidays else []
@@ -600,13 +603,13 @@ async def schedule_appointment(request: Request, db: Session = Depends(get_db)):
         detail = "Patient name is required to book an appointment."
         if tool_call_id:
             return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
-        raise HTTPException(status_code=400, detail=detail)
+        return {"success": False, "message": detail}
 
     if not parsed_dt:
         detail = "A valid appointment date and time is required."
         if tool_call_id:
             return {"results": [{"toolCallId": tool_call_id, "result": detail}]}
-        raise HTTPException(status_code=400, detail=detail)
+        return {"success": False, "message": detail}
 
     return await schedule_appointment_core(patient_name, reason, parsed_dt, tool_call_id, db)
 
