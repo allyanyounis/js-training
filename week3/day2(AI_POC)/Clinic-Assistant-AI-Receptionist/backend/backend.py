@@ -673,104 +673,195 @@ async def cancel_appointment(request: Request, db: Session = Depends(get_db)):
     return CancelAppointmentResponse(canceled_count=len(appointments))
 
 
-@app.api_route("/check_doctor_availability", methods=["GET", "POST"], include_in_schema=False)
-@app.api_route("/check_doctor_availability/", methods=["GET", "POST"], include_in_schema=False)
-@app.api_route("/doctor_availability", methods=["GET", "POST"], include_in_schema=False)
+@app.get("/check_doctor_availability")
+@app.get("/check_doctor_availability/", include_in_schema=False)
+@app.get("/doctor_availability", include_in_schema=False)
+@app.get("/doctor_availability/", include_in_schema=False)
+def check_doctor_availability(
+    date: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Read clinic availability for a date supplied as a GET query parameter.
+
+    Example: GET /check_doctor_availability?date=2026-10-31
+    """
+    target_date = _parse_date_value(date)
+    if date and not target_date:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid date. Use YYYY-MM-DD, for example 2026-10-31."
+        )
+
+    settings = db.execute(select(ClinicSettings)).scalar_one_or_none()
+    if settings is None:
+        settings = ClinicSettings()
+
+    start_time = dt.time(settings.start_hour, 0)
+    end_time = dt.time(settings.end_hour, 0)
+    hours_text = (
+        f"{dt.datetime.combine(dt.date.today(), start_time).strftime('%I:%M %p')} "
+        f"to {dt.datetime.combine(dt.date.today(), end_time).strftime('%I:%M %p')}"
+    )
+
+    day_map = {
+        0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday",
+        4: "Friday", 5: "Saturday", 6: "Sunday"
+    }
+    working_day_ints = [
+        int(value.strip())
+        for value in (settings.working_days or "").split(",")
+        if value.strip().isdigit() and 0 <= int(value.strip()) <= 6
+    ]
+    working_days_text = ", ".join(day_map[value] for value in working_day_ints) or "No working days configured"
+    holidays = [
+        value.strip()
+        for value in (settings.holidays or "").split(",")
+        if value.strip()
+    ]
+
+    query = select(Appointment).order_by(Appointment.start_time.asc())
+    if target_date:
+        day_start = dt.datetime.combine(target_date, dt.time.min)
+        day_end = day_start + dt.timedelta(days=1)
+        query = query.where(
+            Appointment.start_time >= day_start,
+            Appointment.start_time < day_end
+        )
+
+    appointment_rows = db.execute(query).scalars().all()
+    active_rows = [appointment for appointment in appointment_rows if not appointment.canceled]
+    booked_appointments = [
+        AppointmentResponse(
+            id=appointment.id,
+            patient_name=appointment.patient_name,
+            reason=appointment.reason,
+            start_time=appointment.start_time,
+            canceled=appointment.canceled,
+            created_at=appointment.created_at,
+            transcript=appointment.transcript
+        )
+        for appointment in appointment_rows
+    ]
+
+    is_holiday = bool(target_date and target_date.isoformat() in holidays)
+    is_working_day = bool(target_date and target_date.weekday() in working_day_ints)
+    is_clinic_open = None if target_date is None else (is_working_day and not is_holiday)
+    available_slots = []
+
+    if target_date and is_clinic_open:
+        duration = max(1, settings.slot_duration_minutes or 15)
+        current_slot = dt.datetime.combine(
+            target_date,
+            dt.time(settings.start_hour, 0)
+        )
+        closing_time = dt.datetime.combine(
+            target_date,
+            dt.time(settings.end_hour, 0)
+        )
+        booked_times = {appointment.start_time for appointment in active_rows}
+        now = dt.datetime.now()
+
+        while current_slot + dt.timedelta(minutes=duration) <= closing_time:
+            if current_slot not in booked_times and current_slot > now:
+                available_slots.append(current_slot.strftime("%I:%M %p"))
+            current_slot += dt.timedelta(minutes=duration)
+
+    if target_date:
+        if target_date < dt.date.today():
+            summary_text = (
+                f"{target_date.strftime('%B %d, %Y')} is in the past. "
+                "Please choose a future date."
+            )
+            is_clinic_open = False
+            available_slots = []
+        elif is_holiday:
+            summary_text = (
+                f"The clinic is closed on {target_date.strftime('%B %d, %Y')} "
+                "because it is a holiday."
+            )
+        elif not is_working_day:
+            summary_text = (
+                f"The clinic is closed on {target_date.strftime('%B %d, %Y')} "
+                "because it is not a scheduled working day."
+            )
+        elif available_slots:
+            summary_text = (
+                f"On {target_date.strftime('%B %d, %Y')}, clinic hours are {hours_text}. "
+                f"Available slots: {', '.join(available_slots)}."
+            )
+        else:
+            summary_text = (
+                f"The clinic is open on {target_date.strftime('%B %d, %Y')} "
+                f"from {hours_text}, but no future appointment slots are currently available."
+            )
+    else:
+        summary_text = (
+            f"The doctor is available between {hours_text} on {working_days_text}. "
+            "Provide a date in YYYY-MM-DD format to check specific appointment slots."
+        )
+
+    return {
+        "date": target_date.isoformat() if target_date else None,
+        "doctor_available_hours": hours_text,
+        "working_days": working_days_text,
+        "slot_duration_minutes": settings.slot_duration_minutes,
+        "is_clinic_open": is_clinic_open,
+        "is_working_day": is_working_day if target_date else None,
+        "is_holiday": is_holiday,
+        "summary": summary_text,
+        "available_slots": available_slots,
+        "booked_appointments": booked_appointments,
+        "appointments": booked_appointments
+    }
+
+
 @app.api_route("/list_appointments", methods=["GET", "POST"])
 @app.api_route("/list_appointments/", methods=["GET", "POST"], include_in_schema=False)
 async def list_appointments(
     request: Request,
-    date: str | None = None,
+    date: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """List appointments and provide doctor availability info for VAPI and frontend."""
+    """List appointments for the dashboard or respond to legacy Vapi POST calls."""
     target_date = _parse_date_value(date)
     tool_call_id = None
 
     if request.method == "POST":
         args, tool_call_id, _ = await _extract_tool_payload(request)
         if not target_date:
-            date_arg = args.get("date") or args.get("start_time")
-            target_date = _parse_date_value(date_arg)
+            target_date = _parse_date_value(args.get("date") or args.get("start_time"))
 
-    query = select(Appointment)
+    query = select(Appointment).order_by(Appointment.start_time.asc())
     if target_date:
-        start_dt = dt.datetime.combine(target_date, dt.time.min)
-        end_dt = start_dt + dt.timedelta(days=1)
-        query = query.where(Appointment.start_time >= start_dt).where(Appointment.start_time < end_dt)
+        day_start = dt.datetime.combine(target_date, dt.time.min)
+        day_end = day_start + dt.timedelta(days=1)
+        query = query.where(
+            Appointment.start_time >= day_start,
+            Appointment.start_time < day_end
+        )
 
-    query = query.order_by(Appointment.start_time.asc())
-    result = db.execute(query)
-
-    booked_appointments = []
-    for appointment in result.scalars().all():
-        booked_appointments.append(AppointmentResponse(
+    appointments = db.execute(query).scalars().all()
+    appointment_data = [
+        AppointmentResponse(
             id=appointment.id,
             patient_name=appointment.patient_name,
             reason=appointment.reason,
             start_time=appointment.start_time,
             canceled=appointment.canceled,
-            created_at=appointment.created_at
-        ))
-
-    settings = db.execute(select(ClinicSettings)).scalar_one_or_none()
-    if not settings:
-        settings = ClinicSettings()
-
-    start_ampm = "AM" if settings.start_hour < 12 else "PM"
-    end_ampm = "AM" if settings.end_hour < 12 else "PM"
-    sh = settings.start_hour % 12 or 12
-    eh = settings.end_hour % 12 or 12
-    hours_text = f"{sh}:00 {start_ampm} to {eh}:00 {end_ampm}"
-
-    day_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
-    working_day_ints = [int(d.strip()) for d in settings.working_days.split(",") if d.strip().isdigit()]
-    working_day_names = [day_map[d] for d in working_day_ints if d in day_map]
-    working_days_text = ", ".join(working_day_names) if working_day_names else "Monday through Friday"
-
-    active_appts = [a for a in booked_appointments if not a.canceled]
-    if target_date:
-        if active_appts:
-            slots_str = ", ".join([a.start_time.strftime("%I:%M %p") for a in active_appts])
-            summary_text = (
-                f"On {target_date.strftime('%B %d, %Y')}, doctor available hours are {hours_text}. "
-                f"Already booked slots: {slots_str}. All other slots are available."
-            )
-        else:
-            summary_text = (
-                f"On {target_date.strftime('%B %d, %Y')}, doctor available hours are {hours_text}. "
-                "All slots are currently open."
-            )
-    else:
-        summary_text = f"The doctor is available between {hours_text} on {working_days_text}."
+            created_at=appointment.created_at,
+            transcript=appointment.transcript
+        )
+        for appointment in appointments
+    ]
 
     if tool_call_id:
+        summary = f"Found {len(appointment_data)} appointments."
         return {
-            "results": [
-                {
-                    "toolCallId": tool_call_id,
-                    "result": summary_text
-                }
-            ],
-            "doctor_available_hours": hours_text,
-            "working_days": working_days_text,
-            "slot_duration_minutes": settings.slot_duration_minutes,
-            "summary": summary_text,
-            "booked_appointments": booked_appointments,
-            "appointments": booked_appointments
+            "results": [{"toolCallId": tool_call_id, "result": summary}],
+            "appointments": appointment_data
         }
 
-    if request.method == "GET" or "check_doctor_availability" in request.url.path or "doctor_availability" in request.url.path:
-        return {
-            "doctor_available_hours": hours_text,
-            "working_days": working_days_text,
-            "slot_duration_minutes": settings.slot_duration_minutes,
-            "summary": summary_text,
-            "booked_appointments": booked_appointments,
-            "appointments": booked_appointments
-        }
-
-    return booked_appointments
+    return appointment_data
 
 
 # ---------------------------------------------------------------------------
