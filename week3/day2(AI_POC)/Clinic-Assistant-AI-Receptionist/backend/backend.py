@@ -24,7 +24,10 @@ import uvicorn
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from database.database import Appointment, ClinicSettings, User, get_db, init_db
+from database.database import Appointment, ClinicSettings, User, get_db, init_db, engine
+
+# Log the active database target at startup (password is always hidden).
+print(f"[database] Active target: {engine.url.render_as_string(hide_password=True)}")
 
 # ---------------------------------------------------------------------------
 # Security & Password Utilities
@@ -217,7 +220,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 # Clinic Settings Endpoints
 # ---------------------------------------------------------------------------
 @app.get("/settings", response_model=ClinicSettingsResponse)
-@app.get("/settings/", response_model=ClinicSettingsResponse)
+@app.get("/settings/", response_model=ClinicSettingsResponse, include_in_schema=False)
 def get_settings(db: Session = Depends(get_db)):
     """Fetch current clinic operating hours, working days, and holidays."""
     settings = db.execute(select(ClinicSettings)).scalar_one_or_none()
@@ -237,7 +240,7 @@ def get_settings(db: Session = Depends(get_db)):
 
 
 @app.post("/settings", response_model=ClinicSettingsResponse)
-@app.post("/settings/", response_model=ClinicSettingsResponse)
+@app.post("/settings/", response_model=ClinicSettingsResponse, include_in_schema=False)
 def update_settings(request: UpdateClinicSettingsRequest, db: Session = Depends(get_db)):
     """Update clinic schedule configuration."""
     try:
@@ -573,7 +576,7 @@ async def schedule_appointment_core(
 # Appointment Management Endpoints
 # ---------------------------------------------------------------------------
 @app.post("/schedule_appointment")
-@app.post("/schedule_appointment/")
+@app.post("/schedule_appointment/", include_in_schema=False)
 async def schedule_appointment(request: Request, db: Session = Depends(get_db)):
     """Schedule a new appointment, accepting direct REST or VAPI tool-call requests."""
     args, tool_call_id, _ = await _extract_tool_payload(request)
@@ -603,7 +606,7 @@ async def schedule_appointment(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/cancel_appointment")
-@app.post("/cancel_appointment/")
+@app.post("/cancel_appointment/", include_in_schema=False)
 async def cancel_appointment(request: Request, db: Session = Depends(get_db)):
     """Cancel existing appointments for a patient on a specific date."""
     args, tool_call_id, _ = await _extract_tool_payload(request)
@@ -661,11 +664,11 @@ async def cancel_appointment(request: Request, db: Session = Depends(get_db)):
     return CancelAppointmentResponse(canceled_count=len(appointments))
 
 
-@app.api_route("/check_doctor_availability", methods=["GET", "POST"])
-@app.api_route("/check_doctor_availability/", methods=["GET", "POST"])
-@app.api_route("/doctor_availability", methods=["GET", "POST"])
+@app.api_route("/check_doctor_availability", methods=["GET", "POST"], include_in_schema=False)
+@app.api_route("/check_doctor_availability/", methods=["GET", "POST"], include_in_schema=False)
+@app.api_route("/doctor_availability", methods=["GET", "POST"], include_in_schema=False)
 @app.api_route("/list_appointments", methods=["GET", "POST"])
-@app.api_route("/list_appointments/", methods=["GET", "POST"])
+@app.api_route("/list_appointments/", methods=["GET", "POST"], include_in_schema=False)
 async def list_appointments(
     request: Request,
     date: str | None = None,
@@ -770,9 +773,9 @@ def health_check():
     return {"status": "ok", "message": "DocAssist AI Backend is active and running"}
 
 
-@app.post("/")
-@app.post("/webhook")
-@app.post("/vapi")
+@app.post("/", include_in_schema=False)
+@app.post("/webhook", include_in_schema=False)
+@app.post("/vapi", include_in_schema=False)
 async def vapi_webhook_router(request: Request, db: Session = Depends(get_db)):
     """General webhook router for VAPI if configured to hit root server URL."""
     args, tool_call_id, func_name = await _extract_tool_payload(request)
