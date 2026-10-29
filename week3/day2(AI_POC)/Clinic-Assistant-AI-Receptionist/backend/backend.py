@@ -354,69 +354,75 @@ def _parse_datetime_value(val: Any, time_val: Any = None) -> Optional[dt.datetim
 
 
 async def _extract_tool_payload(request: Request) -> Tuple[dict, Optional[str], Optional[str]]:
-    """Extract tool arguments, tool_call_id, and function name from incoming request.
+    """Extract tool arguments from Vapi and ordinary REST payloads.
 
-    Supports:
-    - VAPI webhook payload: body["message"]["toolCalls"]
-    - VAPI direct toolCall: body["toolCall"] or body["toolCalls"]
-    - Standard REST payload: body
+    Vapi currently sends function calls under message.toolCallList. Older
+    integrations may use message.toolCalls, top-level toolCall, or toolCalls.
     """
     try:
         body = await request.json()
     except Exception:
         body = {}
 
-    tool_call_id = None
-    func_name = None
-    args = {}
+    def parse_tool_call(tool_call: dict) -> Tuple[dict, Optional[str], Optional[str]]:
+        tool_call_id = tool_call.get("id") or tool_call.get("toolCallId")
+        function = tool_call.get("function") or {}
+        if not isinstance(function, dict):
+            function = {}
+        func_name = function.get("name") or tool_call.get("name")
+        raw_args = function.get("arguments", tool_call.get("arguments", {}))
 
-    if isinstance(body, dict):
-        if "message" in body and isinstance(body["message"], dict):
-            msg = body["message"]
-            tool_calls = msg.get("toolCalls") or msg.get("tools") or []
-            if tool_calls and isinstance(tool_calls, list) and len(tool_calls) > 0:
-                first_tool = tool_calls[0]
-                tool_call_id = first_tool.get("id")
-                fn = first_tool.get("function", {})
-                func_name = fn.get("name")
-                raw_args = fn.get("arguments", {})
-                if isinstance(raw_args, str):
-                    try:
-                        args = json.loads(raw_args)
-                    except Exception:
-                        args = {}
-                elif isinstance(raw_args, dict):
-                    args = raw_args
-        elif "toolCall" in body and isinstance(body["toolCall"], dict):
-            tc = body["toolCall"]
-            tool_call_id = tc.get("id")
-            fn = tc.get("function", {})
-            func_name = fn.get("name")
-            raw_args = fn.get("arguments", {})
-            if isinstance(raw_args, str):
-                try:
-                    args = json.loads(raw_args)
-                except Exception:
-                    args = {}
-            elif isinstance(raw_args, dict):
-                args = raw_args
-        elif "toolCalls" in body and isinstance(body["toolCalls"], list) and len(body["toolCalls"]) > 0:
-            tc = body["toolCalls"][0]
-            tool_call_id = tc.get("id")
-            fn = tc.get("function", {})
-            func_name = fn.get("name")
-            raw_args = fn.get("arguments", {})
-            if isinstance(raw_args, str):
-                try:
-                    args = json.loads(raw_args)
-                except Exception:
-                    args = {}
-            elif isinstance(raw_args, dict):
-                args = raw_args
+        if isinstance(raw_args, str):
+            try:
+                parsed_args = json.loads(raw_args)
+                args = parsed_args if isinstance(parsed_args, dict) else {}
+            except (json.JSONDecodeError, TypeError):
+                args = {}
+        elif isinstance(raw_args, dict):
+            args = raw_args
         else:
-            args = body
+            args = {}
 
-    return args, tool_call_id, func_name
+        return args, tool_call_id, func_name
+
+    if not isinstance(body, dict):
+        return {}, None, None
+
+    message = body.get("message")
+    if isinstance(message, dict):
+        # toolCallList is the current Vapi server-tool payload field.
+        tool_calls = (
+            message.get("toolCallList")
+            or message.get("toolCalls")
+            or message.get("tools")
+            or []
+        )
+        if isinstance(tool_calls, list) and tool_calls and isinstance(tool_calls[0], dict):
+            return parse_tool_call(tool_calls[0])
+
+        # Some payloads wrap each tool call inside toolWithToolCallList.
+        wrapped_calls = message.get("toolWithToolCallList") or []
+        if isinstance(wrapped_calls, list) and wrapped_calls and isinstance(wrapped_calls[0], dict):
+            wrapped = wrapped_calls[0]
+            nested_call = wrapped.get("toolCall")
+            if isinstance(nested_call, dict):
+                return parse_tool_call(nested_call)
+            return parse_tool_call(wrapped)
+
+        # Don't accidentally treat a Vapi event envelope as appointment arguments.
+        return {}, None, None
+
+    single_call = body.get("toolCall")
+    if isinstance(single_call, dict):
+        return parse_tool_call(single_call)
+
+    for key in ("toolCallList", "toolCalls"):
+        tool_calls = body.get(key)
+        if isinstance(tool_calls, list) and tool_calls and isinstance(tool_calls[0], dict):
+            return parse_tool_call(tool_calls[0])
+
+    # Standard REST payload: fields such as patient_name, reason, start_time.
+    return body, None, None
 
 
 # ---------------------------------------------------------------------------
