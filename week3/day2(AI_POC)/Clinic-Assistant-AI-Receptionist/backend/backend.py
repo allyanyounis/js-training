@@ -476,19 +476,21 @@ async def schedule_appointment_core(
             "Please choose a valid working day."
         )
 
-    # 3. Booking Window Check (not in the past, within 10 days)
+    # 3. Booking Window Check: only strictly future times, today through 10 days ahead.
     current_dt = dt.datetime.now()
-    if start_time < current_dt - dt.timedelta(minutes=15):
+    today = current_dt.date()
+    max_booking_date = today + dt.timedelta(days=10)
+
+    if start_time <= current_dt:
         return respond_error(
-            "I'm sorry, but you cannot book an appointment in the past. "
-            "Please choose a date and time today or up to 10 days from today."
+            "I'm sorry, appointments can only be booked for a future time. "
+            "Please choose a time later than the current time."
         )
 
-    if start_time.date() > current_dt.date() + dt.timedelta(days=10):
-        max_date = current_dt.date() + dt.timedelta(days=10)
+    if start_time.date() > max_booking_date:
         return respond_error(
-            f"I'm sorry, but appointments can only be booked up to 10 days in advance. "
-            f"The latest date you can book is {max_date.strftime('%B %d, %Y')}."
+            f"I'm sorry, appointments can only be booked from today through the next 10 days. "
+            f"The latest date you can book is {max_booking_date.strftime('%B %d, %Y')}."
         )
 
     # 4. Operating Hours Check
@@ -743,9 +745,19 @@ def check_doctor_availability(
         for appointment in appointment_rows
     ]
 
+    now = dt.datetime.now()
+    today = now.date()
+    max_booking_date = today + dt.timedelta(days=10)
+
     is_holiday = bool(target_date and target_date.isoformat() in holidays)
     is_working_day = bool(target_date and target_date.weekday() in working_day_ints)
-    is_clinic_open = None if target_date is None else (is_working_day and not is_holiday)
+    is_outside_booking_window = bool(
+        target_date and (target_date < today or target_date > max_booking_date)
+    )
+    is_clinic_open = (
+        None if target_date is None
+        else (is_working_day and not is_holiday and not is_outside_booking_window)
+    )
     available_slots = []
 
     if target_date and is_clinic_open:
@@ -759,18 +771,23 @@ def check_doctor_availability(
             dt.time(settings.end_hour, 0)
         )
         booked_times = {appointment.start_time for appointment in active_rows}
-        now = dt.datetime.now()
-
         while current_slot + dt.timedelta(minutes=duration) <= closing_time:
             if current_slot not in booked_times and current_slot > now:
                 available_slots.append(current_slot.strftime("%I:%M %p"))
             current_slot += dt.timedelta(minutes=duration)
 
     if target_date:
-        if target_date < dt.date.today():
+        if target_date < today:
             summary_text = (
                 f"{target_date.strftime('%B %d, %Y')} is in the past. "
-                "Please choose a future date."
+                "Please choose today or a future date within the next 10 days."
+            )
+            is_clinic_open = False
+            available_slots = []
+        elif target_date > max_booking_date:
+            summary_text = (
+                f"{target_date.strftime('%B %d, %Y')} is outside the booking window. "
+                f"Appointments can only be booked through {max_booking_date.strftime('%B %d, %Y')}."
             )
             is_clinic_open = False
             available_slots = []
@@ -797,6 +814,7 @@ def check_doctor_availability(
     else:
         summary_text = (
             f"The doctor is available between {hours_text} on {working_days_text}. "
+            f"Appointments can be booked from today through {max_booking_date.strftime('%B %d, %Y')}. "
             "Provide a date in YYYY-MM-DD format to check specific appointment slots."
         )
 
