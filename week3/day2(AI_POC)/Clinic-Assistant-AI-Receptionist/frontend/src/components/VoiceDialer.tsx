@@ -5,8 +5,8 @@ import Vapi from "@vapi-ai/web";
 import { Phone, PhoneOff, Mic, Bot, User } from "lucide-react";
 
 // VAPI credentials
-const VAPI_PUBLIC_KEY = "595f34fb-a47e-4af2-aa10-a5f94162bf57";
-const ASSISTANT_ID    = "d4394d14-57ab-4433-af29-328eda73b1ea";
+const VAPI_PUBLIC_KEY = "795c2fde-07ae-4534-91ad-ccb278a96bff";
+const ASSISTANT_ID    = "ded8989b-315a-4eb0-a715-e4a3241112d4";
 
 // Store Vapi on globalThis so it survives Next.js HMR (Fast Refresh).
 // Module-level 'let' variables get RESET on every HMR reload, causing
